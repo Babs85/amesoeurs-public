@@ -131,8 +131,3 @@ Développeur Java – Passionné par Spring Boot & les applications back-end.
 📧 [ababacar.sedikh@hotmail.fr](mailto:ababacar.sedikh@hotmail.fr)
 
 ---
-
-👉 Avec ce README, ton repo sera **beaucoup plus pro et attractif**.
-Les recruteurs comprendront immédiatement ce que fait ton projet **et comment le lancer**.
-
-Veux-tu que je prépare aussi un petit **badge GitHub Actions (CI)** pour ton README, histoire de montrer que tu maîtrises l’intégration continue ?
