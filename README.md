@@ -121,6 +121,7 @@ Extrait du `pom.xml` :
 ## 📸 Captures d’écran (à ajouter)
 <img width="1440" height="900" alt="Capture d’écran 2025-09-27 à 18 01 25" src="https://github.com/user-attachments/assets/f9086243-5c1e-4b4c-acdc-dcc53f944bc9" />
 
+<img width="1440" height="900" alt="Capture d’écran 2025-09-27 à 18 01 32" src="https://github.com/user-attachments/assets/800ef133-50a4-47ce-acd9-830388df7fb3" />
 
 *----*
 
