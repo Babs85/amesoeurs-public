@@ -126,6 +126,127 @@ Extrait du `pom.xml` :
 *----*
 
 ---
+Fonctionnement chat messages avec websocket
+---
+
+## 🟢 1. Configuration WebSocket (`WebSocketConfig`)
+
+* La classe est annotée avec `@EnableWebSocketMessageBroker` → ça active **STOMP** sur WebSocket.
+
+* **`configureMessageBroker`** :
+
+  * `enableSimpleBroker("/user")` → le **broker interne** Spring gère les destinations `/user/...` (messages envoyés aux clients).
+  * `setApplicationDestinationPrefixes("/app")` → les messages envoyés à `/app/...` vont dans le **backend** (contrôleurs STOMP).
+  * `setUserDestinationPrefix("/user")` → permet d’envoyer des messages ciblés (par exemple `/user/john/queue/messages`).
+
+* **`registerStompEndpoints`** :
+
+  * Expose `/ws` comme point d’entrée WebSocket.
+  * `.withSockJS()` → fallback si le navigateur ne supporte pas WebSocket natif.
+
+* **`configureMessageConverters`** :
+
+  * Force le format JSON par défaut avec `MappingJackson2MessageConverter`.
+  * Chaque message envoyé/reçu passe en JSON via Jackson.
+
+👉 Résumé : ici tu définis le **canal de communication** et les **règles de routage** des messages.
+
+---
+
+## 🟢 2. Le contrôleur `ChatMessageController`
+
+C’est lui qui **reçoit, traite et renvoie** les messages.
+
+### 🔹 a) `@MessageMapping("/chat") → processMessage`
+
+* Chaque message envoyé par le client à `/app/chat` arrive ici.
+* Workflow :
+
+  1. **Différencie un message privé (PRIVATE) ou de groupe (TRIPLE, DOUBLE_CHAPERON)**.
+  2. **PRIVATE** :
+
+     * Normalise le `chatId` → toujours hommeId_femmeId.
+     * Sauvegarde le message.
+     * Crée une **chatroom** si elle n’existe pas encore.
+     * Crée une **notification** (table `ChatNotification`).
+     * Envoie le message :
+
+       * au destinataire (`convertAndSendToUser` → `/user/{recipient}/queue/messages`).
+       * et aux chaperons liés (destinataire et expéditeur).
+  3. **Groupes (TRIPLE/DOUBLE_CHAPERON)** :
+
+     * Sauvegarde en base.
+     * Broadcast au topic `/topic/group/{chatId}` (tous les membres abonnés reçoivent).
+
+👉 Ici, tu gères à la fois la **persistance** (BD), les **notifications** et la **diffusion temps réel**.
+
+---
+
+### 🔹 b) Récupération de messages
+
+* `@GetMapping("/messages/{sender}/{recipient}")` → récupère l’historique des messages privés.
+* `@GetMapping("/group/{chatId}/messages")` → récupère l’historique d’un groupe.
+
+👉 Sert au front pour afficher l’historique au moment où tu ouvres une discussion.
+
+---
+
+### 🔹 c) Récupération des discussions (liste des chats)
+
+* `@GetMapping("/user/{pseudo}/chats")` → liste tous les chats/matchs d’un utilisateur.
+
+  * Récupère les **chatrooms existants**.
+  * Ajoute les **utilisateurs matchés sans chatroom** (fakeChat).
+  * Détermine si le chat est **PRIVATE**, **TRIPLE** ou **DOUBLE_CHAPERON** en fonction de la présence de chaperons.
+  * Trie les discussions.
+
+👉 C’est ce qui alimente la **liste de discussions** côté front.
+
+---
+
+### 🔹 d) Gestion des chaperons
+
+* `handleChaperonNotifications` → si un message a des chaperons liés (`relatedChaperons`), le contrôleur envoie une copie du message dans leur `queue/messages`.
+* `determineUserType` → identifie si l’utilisateur est **CHAPERON**, **FILLEUL**, ou **NORMAL**.
+
+👉 Cette logique permet d’inclure automatiquement les chaperons dans les échanges.
+
+---
+
+## 🟢 3. Le cycle complet d’un message
+
+1. Le client envoie un message à `/app/chat` via STOMP.
+2. Le serveur reçoit → `processMessage`.
+3. Le message est **sauvegardé en base** (`ChatMessageService`).
+4. Une **notification** est créée (`ChatNotificationRepo`).
+5. Le serveur envoie le message :
+
+   * au destinataire (`/user/{recipient}/queue/messages`),
+   * aux chaperons (`/user/{chaperon}/queue/messages`),
+   * ou au groupe (`/topic/group/{chatId}`).
+6. Le client abonné reçoit le message en temps réel.
+
+---
+
+## 🟢 4. En résumé synthétique
+
+* **`WebSocketConfig`** → configure STOMP + broker interne.
+* **`ChatMessageController`** → cœur de la logique métier :
+
+  * Sauvegarde en base (messages + notifications).
+  * Diffusion en temps réel (destinataires, chaperons, groupes).
+  * Gestion des discussions (liste de chats, types, matches).
+* **Flux côté utilisateur** → REST (pour historique et liste) + WebSocket (pour temps réel).
+
+👉 En clair : le système combine **WebSocket temps réel** avec **REST classique** pour fournir un chat persistant, sécurisé et adapté aux cas avec **chaperons**.
+
+
+
+
+
+
+
+
 
 ## 👤 Auteur
 
