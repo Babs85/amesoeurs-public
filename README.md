@@ -1,4 +1,4 @@
-<img width="1440" height="900" alt="Capture d’écran 2025-09-27 à 18 01 25" src="https://github.com/user-attachments/assets/760440ed-aa2d-4e84-b674-2916c701c57e" />
+
 # 🌐 AmeSoeurs – Application de rencontre qui se base sur des critères scientifiques pour créer des matchs, conçu avec Spring Boot 3.1.0
 
 ## 📌 Description
